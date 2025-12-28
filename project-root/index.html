@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemini 3 Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Archivo+Black&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{height:100vh;background:#0b0f0d;color:#fff;font-family:"Inter",sans-serif;display:flex;flex-direction:column;}
+
+/* TOP MENU BAR */
+.topbar{
+  height:56px;
+  background:#0f1512;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+  border-bottom:1px solid #1f2b24;
+}
+.menu-btn{font-size:1.4rem;cursor:pointer;}
+.brand{font-family:"Archivo Black",sans-serif;font-size:1.2rem;}
+
+/* CHAT AREA */
+.chat-area{
+  flex:1;
+  padding:18px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.msg{
+  max-width:75%;
+  padding:14px 16px;
+  border-radius:14px;
+  font-size:.95rem;
+  line-height:1.45;
+  word-break:break-word;
+}
+.user{align-self:flex-end;background:#1f4030;}
+.gemini{align-self:flex-start;background:#1a1f1c;border:1px solid #23352a;}
+
+/* INPUT AREA */
+.input-bar{
+  padding:14px;
+  background:#0f1512;
+  border-top:1px solid #1f2b24;
+  display:flex;
+  gap:10px;
+}
+.input-bar input{
+  flex:1;
+  background:rgba(0,40,20,.65);
+  border:1px solid #223128;
+  border-radius:10px;
+  padding:12px 14px;
+  color:#caffca;
+  font-size:.95rem;
+  outline:none;
+}
+.send-btn{
+  padding:0 18px;
+  background:#1f4030;
+  border:none;
+  border-radius:10px;
+  color:#b9ffdc;
+  font-size:.95rem;
+  cursor:pointer;
+}
+
+/* TYPEWRITER EFFECT */
+.typewriter span{display:inline-block;overflow:hidden;white-space:nowrap;border-right:.1em solid #b9ffdc;animation:blink 0.8s infinite;}
+@keyframes blink{0%,100%{border-color:#b9ffdc;}50%{border-color:transparent;}}
+
+/* MOBILE */
+@media(max-width:600px){.msg{max-width:85%}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="menu-btn">☰</div>
+  <div class="brand">Gemini Chat</div>
+  <div style="width:20px"></div>
+</div>
+
+<div class="chat-area" id="chat">
+  <div class="msg gemini typewriter"><span>Gemini environment ready. Enter your instruction below.</span></div>
+</div>
+
+<div class="input-bar">
+  <input id="input" placeholder="Type a message…">
+  <button class="send-btn" onclick="send()">Send</button>
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+
+function addMessage(text,type){
+  const div = document.createElement("div");
+  div.className = `msg ${type} typewriter`;
+  const span = document.createElement("span");
+  div.appendChild(span);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  typeWriter(span,text);
+}
+
+function typeWriter(element,text){
+  let i=0;
+  element.textContent="";
+  function step(){
+    if(i<text.length){
+      element.textContent+=text[i];
+      i++;
+      setTimeout(step,30);
+    }
+  }
+  step();
+}
+
+function send(){
+  const text = input.value.trim();
+  if(!text) return;
+  addMessage(text,"user");
+  input.value = "";
+  addMessage("Gemini is processing your message…","gemini");
+
+  fetch("http://localhost:3000/api/gemini",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({instruction:text})
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    addMessage(data.reply,"gemini");
+  })
+  .catch(err=>{
+    addMessage("Error connecting to Gemini 3","gemini");
+  });
+}
+
+input.addEventListener("keydown",e=>{if(e.key==="Enter") send();});
+</script>
+
+</body>
+</html>
